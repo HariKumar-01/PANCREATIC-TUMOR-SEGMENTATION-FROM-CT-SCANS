@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PancrAI — Pancreatic Cancer Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #07090f;
+  --surface:  #0d1117;
+  --card:     #111720;
+  --border:   #1c2636;
+  --border-hi:#2a3f58;
+  --cyan:     #3ecfcf;
+  --cyan-dim: rgba(62,207,207,0.10);
+  --green:    #34d97b;
+  --amber:    #f5a623;
+  --red:      #e8445a;
+  --text-1:   #e8eef5;
+  --text-2:   #7a9ab8;
+  --text-3:   #344d65;
+  --mono:     'DM Mono', monospace;
+  --sans:     'DM Sans', sans-serif;
+  --display:  'Bebas Neue', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text-1);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(62,207,207,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(62,207,207,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed; top: -180px; left: 20%;
+  width: 700px; height: 500px;
+  background: radial-gradient(ellipse, rgba(62,207,207,0.07) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── HEADER ── */
+header {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 50px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,9,15,0.92);
+  backdrop-filter: blur(16px);
+  flex-shrink: 0;
+}
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+.logo-icon {
+  width: 26px; height: 26px; border: 1px solid var(--cyan); border-radius: 5px;
+  display: grid; place-items: center; font-size: 13px; color: var(--cyan);
+  font-family: var(--mono); background: rgba(62,207,207,0.08);
+}
+.logo-name { font-family: var(--display); font-size: 22px; letter-spacing: 0.04em; }
+.logo-name span { color: var(--cyan); }
+
+nav { display: flex; align-items: center; gap: 2px; }
+.nav-btn {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 4px; border: 1px solid transparent;
+  color: var(--text-2); background: transparent; cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.nav-btn:hover { color: var(--text-1); border-color: var(--border-hi); }
+.nav-btn.active { color: var(--cyan); border-color: var(--cyan); background: var(--cyan-dim); }
+
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em;
+  color: var(--text-2); padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 99px; background: var(--surface);
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 7px rgba(52,217,123,0.9); animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── MAIN — no scroll, fills remaining height ── */
+main {
+  position: relative; z-index: 1;
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 296px;
+  gap: 20px;
+  padding: 16px 32px;
+  overflow: hidden;
+}
+
+/* ── LEFT ── */
+.col-left { display: flex; flex-direction: column; gap: 9px; min-height: 0; }
+
+.eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--cyan); flex-shrink: 0;
+}
+.eyebrow-line { width: 20px; height: 1px; background: linear-gradient(90deg, var(--cyan), transparent); }
+
+h1 {
+  font-family: var(--display); font-size: clamp(30px, 3.8vw, 52px);
+  line-height: 0.92; letter-spacing: 0.02em; flex-shrink: 0;
+}
+h1 .accent { color: var(--cyan); }
+
+.hero-desc {
+  font-size: 11.5px; line-height: 1.65; color: var(--text-2);
+  max-width: 500px; font-weight: 300; flex-shrink: 0;
+}
+
+.model-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 6px 12px; border-radius: 6px;
+  background: rgba(52,217,123,0.05); border: 1px solid rgba(52,217,123,0.18);
+  font-family: var(--mono); font-size: 10px; color: var(--green); letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.sep { opacity: 0.4; }
+
+.upload-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.3);
+}
+.card-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.card-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-3);
+}
+.card-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.07em;
+  padding: 2px 7px; border-radius: 3px; border: 1px solid var(--border-hi); color: var(--text-2);
+}
+
+.drop-zone {
+  flex: 1; min-height: 0; margin: 10px 12px 0;
+  border: 1.5px dashed var(--border-hi); border-radius: 8px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--cyan); background: var(--cyan-dim); }
+.drop-zone.has-file { border-color: var(--green); border-style: solid; background: rgba(52,217,123,0.04); }
+
+.drop-glyph {
+  width: 38px; height: 38px; border: 1px solid var(--border-hi); border-radius: 9px;
+  display: grid; place-items: center; font-size: 17px;
+  background: var(--surface); transition: all 0.2s; flex-shrink: 0;
+}
+.drop-zone:hover .drop-glyph, .drop-zone.drag-over .drop-glyph {
+  border-color: var(--cyan); box-shadow: 0 0 12px rgba(62,207,207,0.2);
+}
+
+.drop-title { font-size: 13px; font-weight: 500; }
+.drop-hint  { font-size: 11px; color: var(--text-2); }
+
+.formats { display: flex; justify-content: center; gap: 5px; }
+.fmt {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+  padding: 2px 6px; border-radius: 3px; border: 1px solid var(--border-hi); color: var(--text-2);
+}
+
+.browse-btn {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--cyan); background: transparent; border: 1px solid var(--cyan); border-radius: 4px;
+  padding: 6px 16px; cursor: pointer; transition: all 0.15s;
+}
+.browse-btn:hover { background: var(--cyan-dim); }
+
+.file-chosen {
+  display: none; font-family: var(--mono); font-size: 10px; color: var(--green);
+  align-items: center; gap: 5px;
+}
+.file-chosen::before { content: '✓'; }
+input[type=file] { display: none; }
+
+.err-msg {
+  display: none; margin: 0 12px 8px; padding: 6px 10px; border-radius: 5px;
+  border: 1px solid var(--red); background: rgba(232,68,90,0.07);
+  font-size: 10px; color: var(--red); line-height: 1.5; font-family: var(--mono); flex-shrink: 0;
+}
+.err-msg.show { display: block; }
+
+.card-footer {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px; border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.15); flex-shrink: 0;
+}
+
+.analyse-btn {
+  font-family: var(--display); font-size: 16px; letter-spacing: 0.08em;
+  background: var(--cyan); color: var(--bg); border: none; border-radius: 5px;
+  padding: 9px 24px; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(62,207,207,0.2); position: relative; overflow: hidden;
+}
+.analyse-btn::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 55%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transition: left 0.4s;
+}
+.analyse-btn:hover:not(:disabled)::before { left: 150%; }
+.analyse-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(62,207,207,0.4); }
+.analyse-btn:disabled { opacity: 0.28; cursor: not-allowed; transform: none; }
+
+.footer-meta { font-family: var(--mono); font-size: 9px; color: var(--text-3); line-height: 1.9; }
+
+/* ── RIGHT ── */
+.col-right { display: flex; flex-direction: column; gap: 9px; min-height: 0; overflow: hidden; }
+
+.section-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-2); flex-shrink: 0;
+}
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex-shrink: 0; }
+.stat {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; position: relative; overflow: hidden; transition: border-color 0.2s;
+}
+.stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.stat:hover { border-color: var(--border-hi); }
+.stat-val { font-family: var(--mono); font-size: 21px; font-weight: 500; line-height: 1; margin-bottom: 4px; }
+.stat-key { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+.stat.c-green::before { background: var(--green); }
+.stat.c-amber::before { background: var(--amber); }
+.stat.c-cyan::before  { background: var(--cyan);  }
+.stat.c-red::before   { background: var(--red);   }
+.stat.c-green .stat-val { color: var(--green); }
+.stat.c-amber .stat-val { color: var(--amber); }
+.stat.c-cyan  .stat-val { color: var(--cyan);  }
+.stat.c-red   .stat-val { color: var(--red);   }
+
+.caps { display: flex; flex-direction: column; gap: 5px; flex: 1; min-height: 0; overflow: hidden; }
+.cap {
+  display: flex; align-items: center; gap: 9px; padding: 7px 9px;
+  border-radius: 7px; background: var(--card); border: 1px solid var(--border);
+  transition: border-color 0.15s; flex-shrink: 0;
+}
+.cap:hover { border-color: var(--border-hi); }
+.cap-icon {
+  width: 26px; height: 26px; border-radius: 5px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 12px;
+  background: var(--surface); border: 1px solid var(--border-hi);
+}
+.cap-title { font-size: 11px; font-weight: 600; margin-bottom: 1px; color: var(--text-1); }
+.cap-desc  { font-size: 9.5px; color: var(--text-2); line-height: 1.3; }
+
+/* ── OVERLAY ── */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(7,9,15,0.94); align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px; backdrop-filter: blur(10px);
+}
+.overlay.show { display: flex; }
+.spin {
+  width: 42px; height: 42px; border: 1.5px solid var(--border-hi); border-top-color: var(--cyan);
+  border-radius: 50%; animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ov-title { font-family: var(--display); font-size: 20px; letter-spacing: 0.04em; }
+.ov-msg   { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.prog-track { width: 280px; height: 2px; background: var(--border-hi); border-radius: 2px; overflow: hidden; }
+.prog-fill  { height: 100%; width: 0; background: var(--cyan); transition: width 0.5s ease; box-shadow: 0 0 8px rgba(62,207,207,0.6); }
+.ov-pct { font-family: var(--mono); font-size: 11px; color: var(--cyan); }
+.steps { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 340px; }
+.step {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.05em;
+  padding: 3px 7px; border-radius: 3px; border: 1px solid var(--border-hi); color: var(--text-3); transition: all 0.3s;
+}
+.step.active { border-color: var(--cyan); color: var(--cyan); }
+.step.done   { border-color: var(--green); color: var(--green); background: rgba(52,217,123,0.06); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/">
+    <div class="logo-icon">+</div>
+    <div class="logo-name">Pancr<span>AI</span></div>
+  </a>
+  <nav>
+    <a href="/" class="nav-btn active">Analyse</a>
+    <a href="#" class="nav-btn" onclick="return false">About</a>
+  </nav>
+  <div class="status-pill">
+    <div class="dot"></div>
+    SwinUNETR v11.0 &nbsp;·&nbsp; ONLINE
+  </div>
+</header>
+
+<div class="overlay" id="overlay">
+  <div class="spin"></div>
+  <div class="ov-title" id="progTitle">Analysing CT Scan</div>
+  <div class="ov-msg"   id="progMsg">Initialising...</div>
+  <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+  <div class="ov-pct"   id="progPct">0%</div>
+  <div class="steps">
+    <div class="step" id="s0">Upload</div>
+    <div class="step" id="s1">Preprocess</div>
+    <div class="step" id="s2">Inference</div>
+    <div class="step" id="s3">TTA (8×)</div>
+    <div class="step" id="s4">Volumetrics</div>
+    <div class="step" id="s5">Done</div>
+  </div>
+</div>
+
+<main>
+  <!-- LEFT -->
+  <div class="col-left">
+    <div class="eyebrow"><div class="eyebrow-line"></div>Final Year Project · AI Medical Imaging</div>
+
+    <h1>Pancreatic <span class="accent">Cancer</span> Detection</h1>
+
+    <p class="hero-desc">
+      Upload an abdominal CT scan in NIfTI format. SwinUNETR segments the pancreas
+      and tumor in 3D, computes volumetric measurements, and generates a structured radiology report.
+    </p>
+
+    <div class="model-bar">
+      <span>✓</span> <strong>Model ready</strong>
+      <span class="sep">·</span> SwinUNETR v11.0
+      <span class="sep">·</span> Pan Dice 0.7321
+      <span class="sep">·</span> Tum Dice 0.4219
+      <span class="sep">·</span> Best Epoch 115
+    </div>
+
+    <div class="upload-card">
+      <div class="card-top">
+        <span class="card-label">Upload CT Scan</span>
+        <span class="card-tag">NIfTI Format</span>
+      </div>
+
+      <div class="drop-zone" id="dropZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="onDragOver(event)"
+           ondragleave="onDragLeave(event)"
+           ondrop="onDrop(event)">
+        <div class="drop-glyph">🫁</div>
+        <div class="drop-title">Drop CT scan here</div>
+        <div class="drop-hint">Drag and drop, or click to browse</div>
+        <div class="formats">
+          <span class="fmt">.nii</span>
+          <span class="fmt">.nii.gz</span>
+          <span class="fmt">up to 2 GB</span>
+        </div>
+        <button class="browse-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+          Browse Files
+        </button>
+        <div class="file-chosen" id="fileName"></div>
+        <input type="file" id="fileInput" accept=".nii,.nii.gz" onchange="onFileSelect(this)">
+      </div>
+
+      <div class="err-msg" id="errorMsg"></div>
+
+      <div class="card-footer">
+        <button class="analyse-btn" id="analyseBtn" disabled onclick="startInference()">Analyse →</button>
+        <div class="footer-meta">
+          ~2–5 min on GPU &nbsp;·&nbsp; ~25 min on CPU<br>
+          Data never leaves this server
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="col-right">
+    <div class="section-label">Model Performance</div>
+    <div class="stats-grid">
+      <div class="stat c-green"><div class="stat-val">0.732</div><div class="stat-key">Pancreas Dice</div></div>
+      <div class="stat c-amber"><div class="stat-val">0.422</div><div class="stat-key">Tumor Dice</div></div>
+      <div class="stat c-cyan"> <div class="stat-val">115</div>  <div class="stat-key">Best Epoch</div></div>
+      <div class="stat c-red">  <div class="stat-val">281</div> <div class="stat-key">Training Scans</div></div>
+    </div>
+
+    <div class="section-label">Capabilities</div>
+    <div class="caps">
+      <div class="cap">
+        <div class="cap-icon">🖼️</div>
+        <div><div class="cap-title">Multi-Planar Viewer</div><div class="cap-desc">Axial, sagittal & coronal with crosshair sync</div></div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">📊</div>
+        <div><div class="cap-title">Volumetric Analysis</div><div class="cap-desc">Volume (mL), burden %, RECIST diameter</div></div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">🌈</div>
+        <div><div class="cap-title">Heatmap Overlay</div><div class="cap-desc">Confidence per anatomical region</div></div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">📋</div>
+        <div><div class="cap-title">PDF Radiology Report</div><div class="cap-desc">Auto-generated structured findings</div></div>
+      </div>
+      <div class="cap">
+        <div class="cap-icon">🔬</div>
+        <div><div class="cap-title">8-Flip TTA</div><div class="cap-desc">+0.02–0.04 Dice via test-time augmentation</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+let file = null, poll = null;
+const STEPS = [
+  {id:'s0',threshold:5},{id:'s1',threshold:20},{id:'s2',threshold:40},
+  {id:'s3',threshold:70},{id:'s4',threshold:90},{id:'s5',threshold:100},
+];
+
+function onDragOver(e)  { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+function onDragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+}
+function onFileSelect(input) { if (input.files[0]) setFile(input.files[0]); }
+
+function setFile(f) {
+  const n = f.name.toLowerCase();
+  if (!n.endsWith('.nii') && !n.endsWith('.nii.gz')) return showError('Please upload a .nii or .nii.gz file.');
+  file = f;
+  const nameEl = document.getElementById('fileName');
+  nameEl.textContent = f.name + '  (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+  nameEl.style.display = 'flex';
+  document.getElementById('dropZone').classList.add('has-file');
+  document.getElementById('analyseBtn').disabled = false;
+  hideError();
+}
+
+async function startInference() {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  showOverlay();
+  setProgress(5, 'Uploading CT scan...', 'Transferring to server...');
+  try {
+    const res  = await fetch('/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    pollJob(data.job_id);
+  } catch(e) { hideOverlay(); showError('Upload failed: ' + e.message); }
+}
+
+function pollJob(jobId) {
+  poll = setInterval(async () => {
+    try {
+      const res  = await fetch('/status/' + jobId);
+      const data = await res.json();
+      setProgress(data.progress, data.message, '');
+      if (data.status === 'done') {
+        clearInterval(poll);
+        setProgress(100, 'Complete — opening viewer...', '');
+        setTimeout(() => { window.location.href = '/result/' + jobId; }, 700);
+      } else if (data.status === 'error') {
+        clearInterval(poll); hideOverlay();
+        showError('Inference failed: ' + (data.error || data.error_full || 'Unknown error'));
+        document.getElementById('analyseBtn').disabled = false;
+      }
+    } catch(e) {}
+  }, 1500);
+}
+
+function setProgress(pct, title, msg) {
+  document.getElementById('progFill').style.width  = pct + '%';
+  document.getElementById('progTitle').textContent = title || 'Analysing...';
+  if (msg) document.getElementById('progMsg').textContent = msg;
+  document.getElementById('progPct').textContent = pct + '%';
+  STEPS.forEach(s => {
+    const el = document.getElementById(s.id); if (!el) return;
+    if (pct >= s.threshold) { el.classList.remove('active'); el.classList.add('done'); }
+    else if (pct >= s.threshold - 15) { el.classList.add('active'); el.classList.remove('done'); }
+  });
+}
+
+function showOverlay() {
+  document.getElementById('analyseBtn').disabled = true;
+  document.getElementById('overlay').classList.add('show');
+  STEPS.forEach(s => { const el = document.getElementById(s.id); if (el) el.classList.remove('active','done'); });
+}
+function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
+function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = msg; el.classList.add('show'); }
+function hideError()    { document.getElementById('errorMsg').classList.remove('show'); }
+</script>
+</body>
+</html>

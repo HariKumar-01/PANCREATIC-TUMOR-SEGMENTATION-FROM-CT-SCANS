@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PancrAI &mdash; Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #050810;
+  --panel: #080d16;
+  --card:  #0c1220;
+  --b1:    #162030;
+  --b2:    #1f3048;
+  --cyan:  #00e5ff;
+  --green: #00ff9d;
+  --red:   #ff2d5a;
+  --amber: #ffb700;
+  --purple:#c084fc;
+  --orange:#ff8c42;
+  --t1:    #ddeeff;
+  --t2:    #6b8faa;
+  --t3:    #2d4a60;
+  --mono:  'JetBrains Mono', monospace;
+  --sans:  'Space Grotesk', sans-serif;
+  --disp:  'Syne', sans-serif;
+  --hdr:   52px;
+  --sb:    252px;
+  --tb:    44px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Viewer is always full-viewport — no scroll anywhere */
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg); color: var(--t1);
+  display: flex; flex-direction: column;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,229,255,0.006) 3px, rgba(0,229,255,0.006) 4px
+  );
+}
+
+/* ── Header ── */
+.hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; height: var(--hdr); flex-shrink: 0;
+  border-bottom: 1px solid var(--b1);
+  background: rgba(8,13,22,0.97);
+  backdrop-filter: blur(8px); z-index: 50;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+  width: 32px; height: 32px; border: 1.5px solid var(--cyan); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 15px; color: var(--cyan);
+  animation: glow 3s ease infinite;
+}
+@keyframes glow { 0%,100%{box-shadow:0 0 7px rgba(0,229,255,.18)} 50%{box-shadow:0 0 20px rgba(0,229,255,.5)} }
+.logo-name { font-family: var(--disp); font-size: 18px; font-weight: 800; }
+.logo-name span { color: var(--cyan); }
+
+.hdr-meta {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px; color: var(--t3);
+  overflow: hidden;
+}
+.hdr-meta .sep { color: var(--b2); flex-shrink: 0; }
+.hdr-meta strong { color: var(--cyan); }
+.hdr-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 4px;
+  border: 1px solid var(--b2); font-size: 10px; color: var(--t2); flex-shrink: 0;
+}
+.hdr-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(0,255,157,0.8); }
+
+.hdr-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.hbtn {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  padding: 6px 13px; border: 1px solid var(--b2);
+  background: transparent; color: var(--t2);
+  border-radius: 5px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.hbtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.hbtn.primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,229,255,0.22); }
+.hbtn.primary:hover { box-shadow: 0 0 26px rgba(0,229,255,0.45); }
+
+/* Sidebar toggle (mobile) */
+.sb-toggle {
+  display: none;
+  font-family: var(--mono); font-size: 10px;
+  padding: 6px 11px; border: 1px solid var(--b2);
+  background: transparent; color: var(--t2);
+  border-radius: 5px; cursor: pointer; transition: all 0.15s;
+}
+.sb-toggle:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Layout ── */
+.layout {
+  display: flex;
+  height: calc(100vh - var(--hdr));
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sb); flex-shrink: 0;
+  background: var(--panel); border-right: 1px solid var(--b1);
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+  transition: transform 0.25s ease, width 0.25s ease;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+.sb { padding: 12px 14px; border-bottom: 1px solid var(--b1); }
+.sb-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--t3); margin-bottom: 9px;
+}
+.sb-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 11px; margin-bottom: 6px;
+}
+.sk { color: var(--t3); } .sv { color: var(--t1); font-weight: 500; }
+.sv.g { color: var(--green); } .sv.r { color: var(--red); }
+.sv.a { color: var(--amber); } .sv.c { color: var(--cyan); }
+
+/* Metric cards */
+.met-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.met-card { background: var(--card); border: 1px solid var(--b1); border-radius: 9px; padding: 10px 9px; text-align: center; }
+.met-val  { font-family: var(--mono); font-size: 18px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+.met-lbl  { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); }
+.met-card.g { border-color: #002a1a; } .met-card.g .met-val { color: var(--green); text-shadow: 0 0 10px rgba(0,255,157,.28); }
+.met-card.r { border-color: #2a000e; } .met-card.r .met-val { color: var(--red); }
+.met-card.a { border-color: #2a1a00; } .met-card.a .met-val { color: var(--amber); }
+.met-card.c { border-color: #002a36; } .met-card.c .met-val { color: var(--cyan); }
+
+.region-tag {
+  display: inline-block; padding: 4px 12px; border-radius: 5px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  border: 1px solid var(--b2); color: var(--cyan); background: rgba(0,229,255,0.06);
+}
+
+/* Presets */
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 9px; }
+.preset {
+  font-family: var(--mono); font-size: 9px; text-align: center;
+  padding: 7px 4px; border: 1px solid var(--b1);
+  background: var(--card); color: var(--t2);
+  border-radius: 5px; cursor: pointer; transition: all 0.15s; line-height: 1.5;
+}
+.preset:hover, .preset.on { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.06); }
+
+/* Sliders */
+.sl-wrap { margin-bottom: 9px; }
+.sl-head { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--t3); margin-bottom: 4px; }
+.sl-head span { color: var(--cyan); font-weight: 500; }
+input[type=range] {
+  width: 100%; height: 3px; -webkit-appearance: none; appearance: none;
+  background: var(--b2); border-radius: 2px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  background: var(--cyan); border-radius: 50%; cursor: pointer;
+  box-shadow: 0 0 7px rgba(0,229,255,0.5);
+}
+
+.sb-btn {
+  width: 100%; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 8px 0; margin-bottom: 6px;
+  border: 1px solid var(--b2); background: transparent;
+  color: var(--t2); border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.sb-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.dice-row { margin-bottom: 7px; }
+.dice-head { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; margin-bottom: 4px; color: var(--t2); }
+.dice-track { height: 3px; background: var(--b1); border-radius: 2px; overflow: hidden; }
+.dice-fill  { height: 100%; border-radius: 2px; }
+
+/* ── Viewport ── */
+.viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; min-height: 0; }
+
+.mpr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: 1fr;
+  flex: 1; gap: 2px; background: #000; min-height: 0; min-width: 0;
+  width: 100%;
+}
+.mpr-pane {
+  position: relative; background: #000; overflow: hidden; cursor: crosshair;
+  min-width: 0; min-height: 0; width: 100%;
+}
+.mpr-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.pane-label {
+  position: absolute; top: 8px; left: 9px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  z-index: 10; pointer-events: none; font-weight: 500;
+}
+.pane-info { position: absolute; top: 8px; right: 9px; font-family: var(--mono); font-size: 10px; color: var(--t3); z-index: 10; pointer-events: none; }
+.pane-pos  { position: absolute; bottom: 8px; left: 9px; font-family: var(--mono); font-size: 10px; color: var(--t3); z-index: 10; pointer-events: none; }
+
+.ch-h, .ch-v { position: absolute; pointer-events: none; z-index: 20; opacity: 0.55; }
+.ch-h { left: 0; right: 0; height: 1px; }
+.ch-v { top: 0; bottom: 0; width: 1px; }
+
+.pane-spin { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 15; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+.pane-spin.show { opacity: 1; }
+.spin-ring { width: 26px; height: 26px; border: 2px solid rgba(0,229,255,0.18); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toolbar ── */
+.toolbar {
+  height: var(--tb); flex-shrink: 0;
+  background: var(--panel); border-top: 1px solid var(--b1);
+  display: flex; align-items: center; padding: 0 12px; gap: 5px;
+  overflow: hidden;
+}
+.tbtn {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+  padding: 5px 12px; border: 1px solid var(--b1); background: var(--card);
+  color: var(--t2); border-radius: 5px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.tbtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.tbtn.on { border-color: var(--cyan); color: var(--cyan); background: rgba(0,229,255,0.08); }
+.divider { width: 1px; height: 16px; background: var(--b1); flex-shrink: 0; }
+.tb-info { font-family: var(--mono); font-size: 9px; color: var(--t3); margin-left: auto; white-space: nowrap; }
+.tb-pos  { font-family: var(--mono); font-size: 10px; color: var(--t2); margin-left: 12px; white-space: nowrap; }
+
+/* ── Report modal ── */
+.modal-wrap {
+  display: none; position: fixed; inset: 0;
+  background: rgba(5,8,16,0.96); z-index: 200;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); padding: 16px;
+}
+.modal-wrap.show { display: flex; }
+.modal {
+  background: var(--panel); border: 1px solid var(--b2); border-radius: 14px;
+  width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 24px;
+  box-shadow: 0 36px 100px rgba(0,0,0,0.6);
+}
+.modal::-webkit-scrollbar { width: 3px; }
+.modal::-webkit-scrollbar-thumb { background: var(--b2); }
+.m-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.m-title { font-family: var(--disp); font-size: 22px; font-weight: 800; }
+.m-close { width: 28px; height: 28px; border: 1px solid var(--b2); background: var(--card); color: var(--t2); border-radius: 5px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.m-close:hover { border-color: var(--red); color: var(--red); }
+
+.r-sec { margin-bottom: 18px; }
+.r-sec-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan); margin-bottom: 9px; padding-bottom: 6px; border-bottom: 1px solid var(--b1); }
+.r-meta-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; font-family: var(--mono); font-size: 10px; }
+.r-meta-item .rk { color: var(--t3); margin-bottom: 2px; }
+.r-meta-item .rv { color: var(--t1); }
+
+.r-met-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+.r-met-card { background: var(--card); border: 1px solid var(--b1); border-radius: 7px; padding: 12px; }
+.r-met-val { font-family: var(--mono); font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+.r-met-lbl { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); }
+
+.r-finding { background: var(--card); border-left: 3px solid var(--cyan); padding: 12px 16px; border-radius: 0 7px 7px 0; font-size: 13px; line-height: 1.85; color: var(--t2); }
+.r-finding strong { color: var(--t1); }
+
+.bwrap { background: var(--card); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px; }
+.blbl { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; margin-bottom: 5px; }
+.btrack { height: 4px; background: var(--b1); border-radius: 2px; overflow: hidden; }
+.bfill  { height: 100%; border-radius: 2px; }
+
+.disc { font-family: var(--mono); font-size: 10px; color: var(--t3); line-height: 1.8; border: 1px solid var(--b1); border-radius: 7px; padding: 10px 14px; }
+.modal-actions { display: flex; gap: 9px; justify-content: flex-end; margin-top: 10px; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════ */
+
+/* Tablet (≤ 900px): sidebar slides over viewport */
+@media (max-width: 900px) {
+  :root { --sb: 240px; }
+  .sb-toggle { display: flex; }
+  .hdr-meta  { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: var(--hdr); left: 0;
+    height: calc(100vh - var(--hdr));
+    z-index: 80;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* dim overlay behind sidebar */
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0;
+    top: var(--hdr); z-index: 79;
+    background: rgba(5,8,16,0.7);
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-backdrop.open { display: block; }
+
+  .tb-info { display: none; }
+  .r-meta-grid { grid-template-columns: 1fr 1fr; }
+  .r-met-grid  { grid-template-columns: 1fr 1fr; }
+}
+
+/* Mobile (≤ 600px): single pane view, smaller controls */
+@media (max-width: 600px) {
+  .hdr { padding: 0 12px; }
+  .hdr-actions .hbtn:not(.primary) { display: none; }
+  .logo-name { font-size: 16px; }
+
+  /* Stack MPR panes vertically, show only axial by default */
+  .mpr-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .mpr-pane { display: none; }
+  .mpr-pane:first-child { display: block; }
+  /* Show all panes when sidebar is closed and space allows */
+
+  .toolbar { padding: 0 8px; gap: 4px; }
+  .tbtn    { padding: 5px 9px; font-size: 9px; }
+  .divider { display: none; }
+  .tb-pos  { display: none; }
+
+  .modal { padding: 16px; }
+  .r-meta-grid { grid-template-columns: 1fr 1fr; }
+  .r-met-grid  { grid-template-columns: 1fr 1fr; }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .hbtn { padding: 5px 9px; font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark">+</div>
+    <div class="logo-name">Pancr<span>AI</span></div>
+  </div>
+  <div class="hdr-meta">
+    <span>Job</span>
+    <strong>{{ job_id }}</strong>
+    <span class="sep">|</span>
+    <span>SwinUNETR v11.0</span>
+    <span class="sep">|</span>
+    <span>Pan <strong>{{ pan_dice }}</strong></span>
+    <span class="sep">|</span>
+    <span>Tum <strong>{{ tum_dice }}</strong></span>
+    <span class="sep">|</span>
+    <div class="hdr-badge"><div class="dot"></div>Ep&nbsp;{{ best_ep }}</div>
+  </div>
+  <div class="hdr-actions">
+    <button class="sb-toggle" onclick="toggleSidebar()">&#9776; Info</button>
+    <button class="hbtn" onclick="showReport()">Report</button>
+    <button class="hbtn primary" onclick="downloadPDF()">PDF</button>
+    <button class="hbtn" onclick="window.location='/'">+ New</button>
+  </div>
+</header>
+
+<div class="sidebar-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb">
+      <div class="sb-title">Scan Information</div>
+      <div class="sb-row"><span class="sk">Modality</span><span class="sv">CT Abdomen</span></div>
+      <div class="sb-row"><span class="sk">Model</span><span class="sv">SwinUNETR v11.0</span></div>
+      <div class="sb-row"><span class="sk">Dims</span><span class="sv" id="infoDims">&mdash;</span></div>
+      <div class="sb-row"><span class="sk">Spacing</span><span class="sv" id="infoSpacing">&mdash;</span></div>
+    </div>
+
+    <div class="sb">
+      <div class="sb-title">Volumetric Analysis</div>
+      <div class="met-grid">
+        <div class="met-card g"><div class="met-val" id="mPan">&mdash;</div><div class="met-lbl">Pan mL</div></div>
+        <div class="met-card r"><div class="met-val" id="mTum">&mdash;</div><div class="met-lbl">Tum mL</div></div>
+        <div class="met-card a"><div class="met-val" id="mBur">&mdash;</div><div class="met-lbl">Burden</div></div>
+        <div class="met-card c"><div class="met-val" id="mDia">&mdash;</div><div class="met-lbl">RECIST mm</div></div>
+      </div>
+    </div>
+
+    <div class="sb">
+      <div class="sb-title">Anatomical Region</div>
+      <span class="region-tag" id="regionBadge">&mdash;</span>
+      <div style="margin-top:8px;font-size:10px;color:var(--t2);line-height:1.65" id="clinicalNote">&mdash;</div>
+    </div>
+
+    <div class="sb">
+      <div class="sb-title">Window / Level</div>
+      <div class="presets">
+        <div class="preset" onclick="applyPreset(400,40,this)">Soft Tissue<br><span style="color:var(--t3)">WW400 WL40</span></div>
+        <div class="preset on" onclick="applyPreset(150,50,this)">Pancreas<br><span style="color:var(--t3)">WW150 WL50</span></div>
+        <div class="preset" onclick="applyPreset(1500,-400,this)">Lung<br><span style="color:var(--t3)">WW1500</span></div>
+        <div class="preset" onclick="applyPreset(2500,400,this)">Bone<br><span style="color:var(--t3)">WW2500</span></div>
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head">Window Width <span id="wwVal">150</span></div>
+        <input type="range" id="wwSlider" min="50" max="3000" value="150" oninput="onWLChange()">
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head">Window Level <span id="wlVal">50</span></div>
+        <input type="range" id="wlSlider" min="-1000" max="1000" value="50" oninput="onWLChange()">
+      </div>
+    </div>
+
+    <div class="sb">
+      <div class="sb-title">Overlay Opacity</div>
+      <div class="sl-wrap">
+        <div class="sl-head">Pancreas <span id="panOpVal">70</span>%</div>
+        <input type="range" id="panOp" min="0" max="100" value="70" oninput="onOverlayChange()">
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head">Tumor <span id="tumOpVal">90</span>%</div>
+        <input type="range" id="tumOp" min="0" max="100" value="90" oninput="onOverlayChange()">
+      </div>
+      <div class="sl-wrap">
+        <div class="sl-head">Heatmap <span id="hmOpVal">0</span>%</div>
+        <input type="range" id="hmOp" min="0" max="100" value="0" oninput="onOverlayChange()">
+      </div>
+    </div>
+
+    <div class="sb">
+      <div class="sb-title">Model Performance</div>
+      <div class="dice-row">
+        <div class="dice-head"><span>Pancreas Dice</span><span style="color:var(--green)">{{ pan_dice }}</span></div>
+        <div class="dice-track"><div class="dice-fill" id="dicePanFill" style="background:var(--green)"></div></div>
+      </div>
+      <div class="dice-row">
+        <div class="dice-head"><span>Tumor Dice</span><span style="color:var(--amber)">{{ tum_dice }}</span></div>
+        <div class="dice-track"><div class="dice-fill" id="diceTumFill" style="background:var(--amber)"></div></div>
+      </div>
+      <div class="sb-row" style="margin-top:7px"><span class="sk">Best Epoch</span><span class="sv c">{{ best_ep }}</span></div>
+      <div class="sb-row"><span class="sk">Spacing</span><span class="sv">1.5 &times; 1.5 &times; 2.0 mm</span></div>
+    </div>
+
+    <div class="sb">
+      <button class="sb-btn" onclick="showReport()">&#128203; Radiology Report</button>
+      <button class="sb-btn" onclick="downloadPDF()">&#8595; Download PDF</button>
+      <button class="sb-btn" onclick="downloadMask()">&#8595; Download Mask</button>
+    </div>
+  </aside>
+
+  <!-- VIEWPORT -->
+  <div class="viewport">
+    <div class="mpr-grid" id="mprGrid">
+
+      <!-- AXIAL -->
+      <div class="mpr-pane" id="paneAxial"
+           onwheel="onScroll('axial',event)"
+           onmousedown="startDrag('axial',event)"
+           onmousemove="onMove('axial',event)"
+           onmouseup="endDrag()" onmouseleave="endDrag()">
+        <canvas id="canvasAxial" class="mpr-canvas"></canvas>
+        <div class="pane-label" style="color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.7)">AXIAL</div>
+        <div class="pane-info" id="infoAxial">HU: &mdash;</div>
+        <div class="ch-h" id="chAxH" style="background:var(--cyan)"></div>
+        <div class="ch-v" id="chAxV" style="background:var(--cyan)"></div>
+        <div class="pane-pos" id="posAxial">Slice: &mdash;</div>
+        <div class="pane-spin" id="spinAxial"><div class="spin-ring"></div></div>
+      </div>
+
+      <!-- SAGITTAL -->
+      <div class="mpr-pane" id="paneSag"
+           onwheel="onScroll('sag',event)"
+           onmousedown="startDrag('sag',event)"
+           onmousemove="onMove('sag',event)"
+           onmouseup="endDrag()" onmouseleave="endDrag()">
+        <canvas id="canvasSag" class="mpr-canvas"></canvas>
+        <div class="pane-label" style="color:var(--orange);text-shadow:0 0 10px rgba(255,140,66,.55)">SAGITTAL</div>
+        <div class="pane-info" id="infoSag">HU: &mdash;</div>
+        <div class="ch-h" id="chSgH" style="background:var(--orange)"></div>
+        <div class="ch-v" id="chSgV" style="background:var(--orange)"></div>
+        <div class="pane-pos" id="posSag">Slice: &mdash;</div>
+        <div class="pane-spin" id="spinSag"><div class="spin-ring"></div></div>
+      </div>
+
+      <!-- CORONAL -->
+      <div class="mpr-pane" id="paneCor"
+           onwheel="onScroll('cor',event)"
+           onmousedown="startDrag('cor',event)"
+           onmousemove="onMove('cor',event)"
+           onmouseup="endDrag()" onmouseleave="endDrag()">
+        <canvas id="canvasCor" class="mpr-canvas"></canvas>
+        <div class="pane-label" style="color:var(--purple);text-shadow:0 0 10px rgba(192,132,252,.55)">CORONAL</div>
+        <div class="pane-info" id="infoCor">HU: &mdash;</div>
+        <div class="ch-h" id="chCoH" style="background:var(--purple)"></div>
+        <div class="ch-v" id="chCoV" style="background:var(--purple)"></div>
+        <div class="pane-pos" id="posCor">Slice: &mdash;</div>
+        <div class="pane-spin" id="spinCor"><div class="spin-ring"></div></div>
+      </div>
+
+    </div>
+
+    <div class="toolbar">
+      <button class="tbtn on" id="tCross" onclick="setTool('cross')">Crosshair</button>
+      <button class="tbtn" id="tHeat" onclick="toggleHeatmap()">Heatmap</button>
+      <div class="divider"></div>
+      <button class="tbtn" onclick="jumpToTumor()">Jump to Tumor</button>
+      <button class="tbtn" onclick="resetView()">Reset View</button>
+      <div class="divider"></div>
+      <span class="tb-info">Scroll: navigate &nbsp;|&nbsp; Click: crosshair &nbsp;|&nbsp; Arrows: fine nav &nbsp;|&nbsp; H: heatmap</span>
+      <span class="tb-pos" id="tInfo">X:&mdash; Y:&mdash; Z:&mdash;</span>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-wrap" id="reportModal">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-title">Radiology Report</div>
+      <button class="m-close" onclick="hideReport()">&#10005;</button>
+    </div>
+
+    <div class="r-sec">
+      <div class="r-sec-title">Study Information</div>
+      <div class="r-meta-grid">
+        <div class="r-meta-item"><div class="rk">Job ID</div><div class="rv">{{ job_id }}</div></div>
+        <div class="r-meta-item"><div class="rk">Date</div><div class="rv" id="rDate">&mdash;</div></div>
+        <div class="r-meta-item"><div class="rk">Modality</div><div class="rv">CT Abdomen</div></div>
+        <div class="r-meta-item"><div class="rk">Dims</div><div class="rv" id="rDims">&mdash;</div></div>
+        <div class="r-meta-item"><div class="rk">Spacing</div><div class="rv" id="rSpacing">&mdash;</div></div>
+        <div class="r-meta-item"><div class="rk">Model</div><div class="rv">SwinUNETR v11.0</div></div>
+      </div>
+    </div>
+
+    <div class="r-sec">
+      <div class="r-sec-title">Quantitative Metrics</div>
+      <div class="r-met-grid">
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--green)" id="rPan">&mdash;</div><div class="r-met-lbl">Pancreas Vol (mL)</div></div>
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--red)"   id="rTum">&mdash;</div><div class="r-met-lbl">Tumor Vol (mL)</div></div>
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--amber)" id="rBur">&mdash;</div><div class="r-met-lbl">Tumor Burden (%)</div></div>
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--cyan)"  id="rDia">&mdash;</div><div class="r-met-lbl">RECIST Diameter (mm)</div></div>
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--green)" id="rReg">&mdash;</div><div class="r-met-lbl">Anatomical Region</div></div>
+        <div class="r-met-card"><div class="r-met-val" style="color:var(--cyan)"  id="rEp">{{ best_ep }}</div><div class="r-met-lbl">Best Epoch</div></div>
+      </div>
+    </div>
+
+    <div class="r-sec">
+      <div class="r-sec-title">Model Performance</div>
+      <div class="bwrap">
+        <div class="blbl"><span>Pancreas Dice</span><span style="color:var(--green)">{{ pan_dice }}</span></div>
+        <div class="btrack"><div class="bfill" id="rPanBar" style="background:var(--green)"></div></div>
+      </div>
+      <div class="bwrap">
+        <div class="blbl"><span>Tumor Dice</span><span style="color:var(--amber)">{{ tum_dice }}</span></div>
+        <div class="btrack"><div class="bfill" id="rTumBar" style="background:var(--amber)"></div></div>
+      </div>
+    </div>
+
+    <div class="r-sec">
+      <div class="r-sec-title">AI Findings</div>
+      <div class="r-finding" id="rFinding">&mdash;</div>
+    </div>
+
+    <div class="r-sec">
+      <div class="r-sec-title">Disclaimer</div>
+      <div class="disc">
+        &#9888; This report is generated by an AI model for educational and research purposes only.
+        It does not constitute a clinical diagnosis. All findings must be reviewed and confirmed
+        by a qualified radiologist or medical professional.
+        Final-year engineering project &mdash; not approved for clinical use.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="hbtn" onclick="hideReport()">Close</button>
+      <button class="hbtn primary" onclick="downloadPDF()">Export PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const JOB_ID   = '{{ job_id }}';
+const PAN_DICE = parseFloat('{{ pan_dice }}') || 0;
+const TUM_DICE = parseFloat('{{ tum_dice }}') || 0;
+
+// Set dice bars
+document.getElementById('dicePanFill').style.width = (PAN_DICE * 100) + '%';
+document.getElementById('diceTumFill').style.width = (TUM_DICE * 100) + '%';
+document.getElementById('rPanBar').style.width     = (PAN_DICE * 100) + '%';
+document.getElementById('rTumBar').style.width     = (TUM_DICE * 100) + '%';
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+var S = {
+  nx:1, ny:1, nz:1, sx:1, sy:1, sz:1,
+  cx:0, cy:0, cz:0,
+  ww:150, wl:50,
+  panOp:0.7, tumOp:0.9,
+  heatmap:false,
+  dragging:false, dragPlane:null,
+  metrics:{},
+  cache:{ axial:{}, sag:{}, cor:{} },
+  ctrl:{ axial:null, sag:null, cor:null },
+};
+var paneRect = { axial:{ox:0,oy:0,dw:0,dh:0}, sag:{ox:0,oy:0,dw:0,dh:0}, cor:{ox:0,oy:0,dw:0,dh:0} };
+
+// ═══════════════════════════════════════════════════════════
+//  SIDEBAR TOGGLE (mobile)
+// ═══════════════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sbBackdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbBackdrop').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+async function init() {
+  try {
+    var dims = await fetchJSON('/api/dims/' + JOB_ID);
+    S.nx = dims.nx; S.ny = dims.ny; S.nz = dims.nz;
+    S.sx = dims.sx; S.sy = dims.sy; S.sz = dims.sz;
+    S.cx = dims.nx >> 1; S.cy = dims.ny >> 1; S.cz = dims.nz >> 1;
+    set('infoDims',    S.nx + '\xd7' + S.ny + '\xd7' + S.nz);
+    set('infoSpacing', S.sx.toFixed(2) + '\xd7' + S.sy.toFixed(2) + '\xd7' + S.sz.toFixed(2) + ' mm');
+
+    var m = await fetchJSON('/api/metrics/' + JOB_ID);
+    S.metrics = m;
+    populateMetrics(m);
+    // Wait two frames so the grid has painted equal columns before measuring
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        sizeCanvases();
+
+        if (m.tum_cz != null) {
+          S.cz = clamp(m.tum_cz, 0, S.nz-1);
+          S.cx = clamp(m.tum_cx, 0, S.nx-1);
+          S.cy = clamp(m.tum_cy, 0, S.ny-1);
+        } else if (m.pan_cz != null) {
+          S.cz = clamp(m.pan_cz, 0, S.nz-1);
+          S.cx = clamp(m.pan_cx, 0, S.nx-1);
+          S.cy = clamp(m.pan_cy, 0, S.ny-1);
+        }
+        loadAll();
+      });
+    });
+  } catch(e) {
+    console.error('Init error:', e);
+    showErr('axial', 'Init failed: ' + e.message);
+  }
+}
+
+function sizeCanvases() {
+  var grid = document.getElementById('mprGrid');
+  var gridRect = grid ? grid.getBoundingClientRect() : null;
+  var pairs = [
+    ['canvasAxial', 'paneAxial'],
+    ['canvasSag',   'paneSag'],
+    ['canvasCor',   'paneCor'],
+  ];
+  pairs.forEach(function(pair) {
+    var c = document.getElementById(pair[0]);
+    var p = document.getElementById(pair[1]);
+    if (!c || !p) return;
+    var r = p.getBoundingClientRect();
+    // Force canvas width to exactly 1/3 of grid to guarantee equal panes
+    var w = gridRect ? Math.floor((gridRect.width - 4) / 3) : Math.max(1, Math.round(r.width));
+    c.width  = Math.max(1, w);
+    c.height = Math.max(1, Math.round(r.height));
+  });
+}
+
+// ResizeObserver keeps canvases correctly sized as layout changes
+(function setupResizeObserver() {
+  if (typeof ResizeObserver === 'undefined') return;
+  var grid = document.getElementById('mprGrid');
+  if (!grid) return;
+  var ro = new ResizeObserver(function() {
+    sizeCanvases(); clearCache(); loadAll();
+  });
+  ro.observe(grid);
+}());
+
+async function fetchJSON(url) {
+  var r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  METRICS
+// ═══════════════════════════════════════════════════════════
+function populateMetrics(m) {
+  set('mPan', m.pancreas_ml);
+  set('mTum', m.tumor_ml);
+  set('mBur', m.burden_pct + '%');
+  set('mDia', m.diam_mm);
+  set('regionBadge', m.region);
+  set('clinicalNote', m.clinical);
+  set('rDate',    new Date().toLocaleString());
+  set('rDims',    S.nx + '\xd7' + S.ny + '\xd7' + S.nz);
+  set('rSpacing', S.sx.toFixed(2) + '\xd7' + S.sy.toFixed(2) + '\xd7' + S.sz.toFixed(2) + ' mm');
+  set('rPan', m.pancreas_ml + ' mL');
+  set('rTum', m.tumor_ml    + ' mL');
+  set('rBur', m.burden_pct  + '%');
+  set('rDia', m.diam_mm     + ' mm');
+  set('rReg', m.region);
+
+  var tv = parseFloat(m.tumor_ml);
+  document.getElementById('rFinding').innerHTML =
+    'The AI model (SwinUNETR v11.0, best epoch ' + (m.model_epoch || '{{ best_ep }}') + ') identified ' +
+    '<strong>' + (tv > 0 ? 'a focal lesion' : 'no significant lesion') + '</strong>' +
+    ' of approximately <strong>' + m.tumor_ml + ' mL</strong>' +
+    ' in the <strong>' + m.region + '</strong> region of the pancreas.' +
+    ' Total pancreatic volume: <strong>' + m.pancreas_ml + ' mL</strong>' +
+    ' (normal 60\u2013120 mL). Tumor burden: <strong>' + m.burden_pct + '%</strong>.' +
+    (tv > 0 ? ' RECIST longest axis: <strong>' + m.diam_mm + ' mm</strong>.' : '') +
+    '<br><br><em style="color:var(--t3)">' + m.clinical + '</em>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SLICE LOADER
+// ═══════════════════════════════════════════════════════════
+function sliceUrl(plane, idx) {
+  return '/api/slice/' + JOB_ID + '/' + plane + '/' + idx
+    + '?ww=' + S.ww + '&wl=' + S.wl + '&overlay=1'
+    + '&pan_op=' + S.panOp.toFixed(2) + '&tum_op=' + S.tumOp.toFixed(2)
+    + '&heatmap=' + (S.heatmap ? 1 : 0);
+}
+
+async function loadSlice(plane) {
+  var idx = plane === 'axial' ? S.cz : plane === 'sag' ? S.cx : S.cy;
+  var key = S.ww + '_' + S.wl + '_' + S.panOp.toFixed(2) + '_' + S.tumOp.toFixed(2) + '_' + (S.heatmap?1:0) + '_' + idx;
+
+  if (S.cache[plane][key]) {
+    drawBitmap(plane, S.cache[plane][key]);
+    updatePosLabel(plane, idx);
+    return;
+  }
+
+  if (S.ctrl[plane]) S.ctrl[plane].abort();
+  var ctrl = new AbortController();
+  S.ctrl[plane] = ctrl;
+  setSpin(plane, true);
+
+  try {
+    var resp   = await fetch(sliceUrl(plane, idx), { signal: ctrl.signal });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var blob   = await resp.blob();
+    var bitmap = await createImageBitmap(blob);
+
+    var keys = Object.keys(S.cache[plane]);
+    if (keys.length > 80) delete S.cache[plane][keys[0]];
+    S.cache[plane][key] = bitmap;
+
+    drawBitmap(plane, bitmap);
+    updatePosLabel(plane, idx);
+  } catch(e) {
+    if (e.name !== 'AbortError') { console.error(e); showErr(plane, e.message); }
+  } finally {
+    if (S.ctrl[plane] === ctrl) S.ctrl[plane] = null;
+    setSpin(plane, false);
+  }
+}
+
+function drawBitmap(plane, bitmap) {
+  var idMap = { axial:'canvasAxial', sag:'canvasSag', cor:'canvasCor' };
+  var canvas = document.getElementById(idMap[plane]);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var cw = canvas.width, ch = canvas.height;
+  var iw = bitmap.width, ih = bitmap.height;
+
+  // Compute the physical aspect ratio of this slice using voxel spacing,
+  // then scale uniformly so the image fills the pane width while preserving
+  // anatomical proportions (no squash/stretch of anatomy).
+  var pw, ph;
+  if      (plane === 'axial') { pw = iw * S.sx; ph = ih * S.sy; }
+  else if (plane === 'sag')   { pw = iw * S.sy; ph = ih * S.sz; }
+  else                        { pw = iw * S.sx; ph = ih * S.sz; }
+
+  // Always fill the full pane WIDTH; let height follow the physical aspect ratio.
+  // This prevents sagittal/coronal from appearing as a tiny centred strip when
+  // their physical height >> width.
+  var scale = cw / pw;
+  var dw = cw;
+  var dh = ph * scale;
+  // If the image is taller than the pane, scale down to fit height instead.
+  if (dh > ch) { scale = ch / ph; dw = pw * scale; dh = ch; }
+  var ox = (cw - dw) / 2, oy = (ch - dh) / 2;
+
+  paneRect[plane] = { ox:ox, oy:oy, dw:dw, dh:dh, iw:iw, ih:ih };
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, cw, ch);
+  // Use bilinear smoothing for sag/cor (sparse Z slices upscaled a lot);
+  // keep nearest-neighbour for axial to preserve crisp pixel boundaries.
+  ctx.imageSmoothingEnabled = (plane !== 'axial');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bitmap, ox, oy, dw, dh);
+  updateCrosshair(plane);
+}
+
+function showErr(plane, msg) {
+  var idMap = { axial:'canvasAxial', sag:'canvasSag', cor:'canvasCor' };
+  var canvas = document.getElementById(idMap[plane]);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#050810'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ff2d5a'; ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('Error: ' + msg, canvas.width/2, canvas.height/2);
+}
+
+function setSpin(plane, on) {
+  var idMap = { axial:'spinAxial', sag:'spinSag', cor:'spinCor' };
+  var el = document.getElementById(idMap[plane]);
+  if (el) el.classList.toggle('show', on);
+}
+
+function loadAll() { loadSlice('axial'); loadSlice('sag'); loadSlice('cor'); }
+
+// ═══════════════════════════════════════════════════════════
+//  CROSSHAIRS
+// ═══════════════════════════════════════════════════════════
+function updateCrosshair(plane) {
+  var r = paneRect[plane];
+  if (!r || !r.dw) return;
+  var xFrac, yFrac;
+  if      (plane === 'axial') { xFrac = S.cx/S.nx; yFrac = S.cy/S.ny; }
+  else if (plane === 'sag')   { xFrac = S.cy/S.ny; yFrac = S.cz/S.nz; }
+  else                        { xFrac = S.cx/S.nx; yFrac = S.cz/S.nz; }
+  var px = r.ox + xFrac * r.dw;
+  var py = r.oy + yFrac * r.dh;
+  var hMap = { axial:'chAxH', sag:'chSgH', cor:'chCoH' };
+  var vMap = { axial:'chAxV', sag:'chSgV', cor:'chCoV' };
+  var hEl = document.getElementById(hMap[plane]);
+  var vEl = document.getElementById(vMap[plane]);
+  if (hEl) hEl.style.top  = py + 'px';
+  if (vEl) vEl.style.left = px + 'px';
+}
+
+function updateAllCrosshairs() { updateCrosshair('axial'); updateCrosshair('sag'); updateCrosshair('cor'); }
+
+function updatePosLabel(plane, idx) {
+  var maxMap = { axial:S.nz, sag:S.nx, cor:S.ny };
+  var elMap  = { axial:'posAxial', sag:'posSag', cor:'posCor' };
+  set(elMap[plane], 'Slice: ' + idx + ' / ' + (maxMap[plane]-1));
+  set('tInfo', 'X:' + S.cx + ' Y:' + S.cy + ' Z:' + S.cz);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INTERACTION
+// ═══════════════════════════════════════════════════════════
+function onScroll(plane, e) {
+  e.preventDefault();
+  var d = e.deltaY > 0 ? 1 : -1;
+  if      (plane === 'axial') S.cz = clamp(S.cz+d, 0, S.nz-1);
+  else if (plane === 'sag')   S.cx = clamp(S.cx+d, 0, S.nx-1);
+  else                        S.cy = clamp(S.cy+d, 0, S.ny-1);
+  loadSlice(plane);
+  ['axial','sag','cor'].filter(function(p){ return p !== plane; }).forEach(function(p){ updateCrosshair(p); });
+}
+
+function startDrag(plane, e) { S.dragging = true; S.dragPlane = plane; moveCursor(plane, e); }
+function endDrag()            { S.dragging = false; S.dragPlane = null; }
+function onMove(plane, e)     { if (S.dragging && S.dragPlane === plane) moveCursor(plane, e); }
+
+function moveCursor(plane, e) {
+  var paneEl = document.getElementById(
+    plane === 'axial' ? 'paneAxial' : plane === 'sag' ? 'paneSag' : 'paneCor');
+  var rect = paneEl.getBoundingClientRect();
+  var xF = clamp01((e.clientX - rect.left) / rect.width);
+  var yF = clamp01((e.clientY - rect.top)  / rect.height);
+  if      (plane === 'axial') { S.cx = clamp(xF*S.nx|0,0,S.nx-1); S.cy = clamp(yF*S.ny|0,0,S.ny-1); }
+  else if (plane === 'sag')   { S.cy = clamp(xF*S.ny|0,0,S.ny-1); S.cz = clamp(yF*S.nz|0,0,S.nz-1); }
+  else                        { S.cx = clamp(xF*S.nx|0,0,S.nx-1); S.cz = clamp(yF*S.nz|0,0,S.nz-1); }
+  loadAll();
+}
+
+function clamp(v,lo,hi) { return Math.max(lo, Math.min(hi, v)); }
+function clamp01(v)     { return Math.max(0,  Math.min(1,  v)); }
+
+// ═══════════════════════════════════════════════════════════
+//  WL + OVERLAY
+// ═══════════════════════════════════════════════════════════
+function applyPreset(ww, wl, btn) {
+  S.ww = ww; S.wl = wl;
+  document.getElementById('wwSlider').value = ww;
+  document.getElementById('wlSlider').value = wl;
+  set('wwVal', ww); set('wlVal', wl);
+  document.querySelectorAll('.preset').forEach(function(b){ b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  clearCache(); loadAll();
+}
+function onWLChange() {
+  S.ww = +document.getElementById('wwSlider').value;
+  S.wl = +document.getElementById('wlSlider').value;
+  set('wwVal', S.ww); set('wlVal', S.wl);
+  document.querySelectorAll('.preset').forEach(function(b){ b.classList.remove('on'); });
+  clearCache(); loadAll();
+}
+function onOverlayChange() {
+  S.panOp = document.getElementById('panOp').value / 100;
+  S.tumOp = document.getElementById('tumOp').value / 100;
+  set('panOpVal', document.getElementById('panOp').value);
+  set('tumOpVal', document.getElementById('tumOp').value);
+  set('hmOpVal',  document.getElementById('hmOp').value);
+  clearCache(); loadAll();
+}
+function clearCache() { S.cache = { axial:{}, sag:{}, cor:{} }; }
+
+// ═══════════════════════════════════════════════════════════
+//  TOOLS
+// ═══════════════════════════════════════════════════════════
+function setTool(t) {
+  document.querySelectorAll('.tbtn').forEach(function(b){ b.classList.remove('on'); });
+  var el = document.getElementById('tCross');
+  if (el) el.classList.add('on');
+}
+function toggleHeatmap() {
+  S.heatmap = !S.heatmap;
+  var v = S.heatmap ? 60 : 0;
+  document.getElementById('hmOp').value = v;
+  set('hmOpVal', v);
+  var el = document.getElementById('tHeat');
+  if (el) el.classList.toggle('on', S.heatmap);
+  clearCache(); loadAll();
+}
+function jumpToTumor() {
+  if (S.metrics && S.metrics.tum_cz != null) {
+    S.cz = clamp(S.metrics.tum_cz, 0, S.nz-1);
+    S.cx = clamp(S.metrics.tum_cx, 0, S.nx-1);
+    S.cy = clamp(S.metrics.tum_cy, 0, S.ny-1);
+  } else if (S.metrics && S.metrics.pan_cz != null) {
+    S.cz = clamp(S.metrics.pan_cz, 0, S.nz-1);
+    S.cx = clamp(S.metrics.pan_cx, 0, S.nx-1);
+    S.cy = clamp(S.metrics.pan_cy, 0, S.ny-1);
+  } else {
+    S.cz = Math.round(S.nz*0.5); S.cx = Math.round(S.nx*0.5); S.cy = Math.round(S.ny*0.45);
+  }
+  loadAll();
+}
+function resetView() { S.cx = S.nx>>1; S.cy = S.ny>>1; S.cz = S.nz>>1; loadAll(); }
+
+// ═══════════════════════════════════════════════════════════
+//  KEYBOARD
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowUp')    { S.cz = clamp(S.cz+1,0,S.nz-1); loadSlice('axial'); updateCrosshair('sag'); updateCrosshair('cor'); }
+  if (e.key === 'ArrowDown')  { S.cz = clamp(S.cz-1,0,S.nz-1); loadSlice('axial'); updateCrosshair('sag'); updateCrosshair('cor'); }
+  if (e.key === 'ArrowLeft')  { S.cx = clamp(S.cx-1,0,S.nx-1); loadSlice('sag'); updateCrosshair('axial'); updateCrosshair('cor'); }
+  if (e.key === 'ArrowRight') { S.cx = clamp(S.cx+1,0,S.nx-1); loadSlice('sag'); updateCrosshair('axial'); updateCrosshair('cor'); }
+  if (e.key === 'h' || e.key === 'H') toggleHeatmap();
+  if (e.key === 'Escape') hideReport();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  DOWNLOADS + MODAL
+// ═══════════════════════════════════════════════════════════
+function showReport()   { document.getElementById('reportModal').classList.add('show'); }
+function hideReport()   { document.getElementById('reportModal').classList.remove('show'); }
+function downloadPDF()  { window.open('/api/report/' + JOB_ID, '_blank'); }
+function downloadMask() { window.open('/api/mask/'   + JOB_ID, '_blank'); }
+
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+function set(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+
+window.addEventListener('resize', function() {
+  requestAnimationFrame(function() {
+    sizeCanvases(); clearCache(); loadAll();
+  });
+});
+
+init();
+</script>
+</body>
+</html>
