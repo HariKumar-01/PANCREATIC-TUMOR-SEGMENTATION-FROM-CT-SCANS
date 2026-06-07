@@ -1,0 +1,42 @@
+{
+  "spacing": [
+    1.5,
+    1.5,
+    2.0
+  ],
+  "hu_min": -175,
+  "hu_max": 250,
+  "img_size": [
+    96,
+    96,
+    96
+  ],
+  "num_samples": 4,
+  "pos": 3,
+  "neg": 1,
+  "batch_size": 1,
+  "cache_num": 20,
+  "num_workers": 2,
+  "out_channels": 3,
+  "feature_size": 48,
+  "use_checkpoint": true,
+  "deep_supervision": true,
+  "ce_class_weights": [
+    0.1,
+    1.0,
+    4.0
+  ],
+  "val_interval": 5,
+  "sw_batch_size": 1,
+  "infer_overlap": 0.5,
+  "num_epochs": 115,
+  "lr": 0.0001,
+  "weight_decay": 1e-05,
+  "warmup_epochs": 10,
+  "grad_clip": 1.0,
+  "train_frac": 0.85,
+  "seed": 42,
+  "early_stop_patience": 20,
+  "train_mode": "full_data",
+  "use_disk_cache": true
+}
