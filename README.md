@@ -574,7 +574,7 @@ print(f"Pancreas Dice    : {result['pancreas_dice']:.4f}")
 
 **Project Guide:** CH. Vinod Varma &nbsp;·&nbsp; Assistant Professor, Dept. of CSE  
 **Institution:** SAGI RAMA KRISHNAM RAJU ENGINEERING COLLEGE (Autonomous), Bhimavaram  
-**Academic Year:** 2024–25 &nbsp;·&nbsp; B.Tech Final Year Project
+**Academic Year:** 2025–26 &nbsp;·&nbsp; B.Tech Final Year Project
 
 </div>
 
@@ -593,7 +593,7 @@ print(f"Pancreas Dice    : {result['pancreas_dice']:.4f}")
 
 <br/>
 
-*Made with ❤️ at* ***SRKR Engineering College, Bhimavaram*** *· Academic Year 2024–25*
+*Made with ❤️ at* ***SRKR Engineering College, Bhimavaram*** *· Academic Year 2025–26*
 
 *⭐ If this project helped you, please consider starring the repo*
 
