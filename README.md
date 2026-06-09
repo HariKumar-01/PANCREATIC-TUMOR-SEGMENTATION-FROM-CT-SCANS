@@ -213,7 +213,7 @@ Performance Gain over Swin UNETR Baseline
 
 ### 📸 Full Architecture Diagram
 
-![System Architecture Diagram](screenshots/architecture_diagram.jpg)
+![System Architecture Diagram](screenshots/System Architecture Diagram.png)
 
 <br/>
 
