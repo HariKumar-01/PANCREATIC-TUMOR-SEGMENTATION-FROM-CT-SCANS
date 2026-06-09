@@ -1,4 +1,4 @@
-<div align="center">
+png<div align="center">
 
 <!-- ═══════════════════════════════════════════════════════════ HERO -->
 
@@ -213,8 +213,7 @@ Performance Gain over Swin UNETR Baseline
 
 ### 📸 Full Architecture Diagram
 
-![System Architecture Diagram](screenshots/System Architecture Diagram.png)
-
+![System Architecture Diagram](screenshots/System%20Architecture%20Diagram.png)
 <br/>
 
 ```
