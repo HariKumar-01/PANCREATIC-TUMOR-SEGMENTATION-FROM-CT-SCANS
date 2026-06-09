@@ -33,6 +33,11 @@
 [![Colab](https://img.shields.io/badge/Google_Colab-F9AB00?style=for-the-badge&logo=googlecolab&logoColor=white)](https://colab.research.google.com)&nbsp;
 [![Kaggle](https://img.shields.io/badge/Kaggle_P100-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://kaggle.com)
 
+<!-- ════════════════════════════════════════════════ QUICK-ACCESS ROW -->
+
+[![Hugging Face](https://img.shields.io/badge/🤗%20Model%20Weights-Hugging%20Face-FFD21E?style=for-the-badge)](https://huggingface.co/Harikumar01/pancreatic-tumor-segmentation-swin-unetr)&nbsp;
+[![Dataset](https://img.shields.io/badge/📦%20Dataset-Google%20Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1YZQFSonulXuagMIfbJkZeTFJ6qEUuUxL/view?usp=drive_link)
+
 <!-- ════════════════════════════════════════════════ STATS BADGES -->
 
 <br/>
@@ -73,13 +78,15 @@
 | 5 | [📊 Training Results](#-training-results) |
 | 6 | [🌐 Web Application](#-web-application--flask-cad-system) |
 | 7 | [🔬 Model Details](#-model-details) |
-| 8 | [📦 Dataset](#-dataset--msd-task07-pancreas) |
-| 9 | [📂 Repository Structure](#-repository-structure) |
-| 10 | [🚀 Quick Start](#-quick-start) |
-| 11 | [⚠️ Limitations](#️-limitations) |
-| 12 | [🔮 Future Scope](#-future-scope) |
-| 13 | [👥 Team](#-team--batch-a10) |
-| 14 | [📚 References](#-references) |
+| 8 | [🤗 Model Weights](#-model-weights) |
+| 9 | [📊 Dataset](#-dataset) |
+| 10 | [🚀 Performance](#-performance) |
+| 11 | [📂 Repository Structure](#-repository-structure) |
+| 12 | [🚀 Quick Start](#-quick-start) |
+| 13 | [⚠️ Limitations](#️-limitations) |
+| 14 | [🔮 Future Scope](#-future-scope) |
+| 15 | [👥 Team](#-team--batch-a10) |
+| 16 | [📚 References](#-references) |
 
 </details>
 
@@ -391,7 +398,7 @@ Performance Gain over Swin UNETR Baseline
 
 ---
 
-## 📦 Dataset — MSD Task07 Pancreas
+## 📦 Dataset — MSD Task07 Pancreas (Detailed)
 
 <table>
 <tr><td><b>Source</b></td><td>Medical Segmentation Decathlon — MICCAI 2018</td></tr>
@@ -409,6 +416,126 @@ Performance Gain over Swin UNETR Baseline
 <tr><td><b>Official Dataset</b></td><td><a href="http://medicaldecathlon.com/">medicaldecathlon.com</a></td></tr>
 <tr><td><b>Kaggle Mirror</b></td><td><a href="https://www.kaggle.com/datasets/lnguynquangbnh/task07-pancreas">kaggle.com — Task07 Pancreas</a></td></tr>
 </table>
+
+---
+
+## 🤗 Model Weights
+
+<div align="center">
+
+[![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Model%20Hub-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/Harikumar01/pancreatic-tumor-segmentation-swin-unetr)&nbsp;
+[![Model Size](https://img.shields.io/badge/Model%20Size-256%20MB-0096C7?style=for-the-badge&logo=databricks&logoColor=white)]()&nbsp;
+[![Format](https://img.shields.io/badge/Format-.pth%20Checkpoint-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)]()
+
+</div>
+
+The trained Swin-UNETR model used in this project is hosted on Hugging Face:
+
+<table>
+<tr>
+<td width="50%">
+
+**🔗 Model Repository:**
+
+```
+https://huggingface.co/Harikumar01/
+  pancreatic-tumor-segmentation-swin-unetr
+```
+
+**📁 Model File:** `best_model.pth` (256 MB)
+
+</td>
+<td width="50%" align="center">
+
+> 📥 **Download Instructions**
+>
+> 1. Visit the Hugging Face repository above
+> 2. Download `best_model.pth`
+> 3. Place the file in the **project root directory**
+> 4. Run inference as normal
+
+</td>
+</tr>
+</table>
+
+> ⚠️ **Note:** The model weights are not stored in this GitHub repository because they exceed GitHub's file size limit. They are hosted on Hugging Face instead.
+
+---
+
+## 📊 Dataset
+
+<div align="center">
+
+[![MSD Task07](https://img.shields.io/badge/Dataset-MSD%20Task07%20Pancreas-2DC653?style=for-the-badge&logo=databricks&logoColor=white)](https://drive.google.com/file/d/1YZQFSonulXuagMIfbJkZeTFJ6qEUuUxL/view?usp=drive_link)&nbsp;
+[![Scans](https://img.shields.io/badge/CT%20Scans-281%20Annotated-00B4D8?style=for-the-badge&logo=medical&logoColor=white)]()&nbsp;
+[![Format](https://img.shields.io/badge/Format-.nii.gz-023E8A?style=for-the-badge)]()
+
+</div>
+
+This project was trained on the **Medical Segmentation Decathlon (MSD) Task07 Pancreas** dataset.
+
+<table>
+<tr>
+<td width="50%">
+
+**🔗 Dataset Download:**
+
+```
+https://drive.google.com/file/d/
+  1YZQFSonulXuagMIfbJkZeTFJ6qEUuUxL/
+  view?usp=drive_link
+```
+
+</td>
+<td width="50%">
+
+| Statistic | Value |
+|-----------|:-----:|
+| Total annotated 3D CT scans | **281** |
+| Training scans | **238** |
+| Validation scans | **43** |
+| File format | **`.nii.gz`** |
+
+</td>
+</tr>
+</table>
+
+**🏷️ Label Classes:**
+
+| Class ID | Label | Color |
+|:--------:|-------|-------|
+| `0` | Background | ⬛ Black |
+| `1` | Pancreas | 🟢 Green |
+| `2` | Tumor | 🔴 Red |
+
+---
+
+## 🚀 Performance
+
+<div align="center">
+
+![Pancreas Dice](https://img.shields.io/badge/Pancreas%20Dice-0.732-2DC653?style=for-the-badge&logo=checkmarx&logoColor=white)&nbsp;
+![Tumor Dice](https://img.shields.io/badge/Tumor%20Dice-0.422-2DC653?style=for-the-badge&logo=checkmarx&logoColor=white)&nbsp;
+![Mean Dice](https://img.shields.io/badge/Mean%20Dice-0.577-2DC653?style=for-the-badge&logo=checkmarx&logoColor=white)
+
+</div>
+
+<div align="center">
+
+| Metric | Score | Gain vs Baseline |
+|:------:|:-----:|:----------------:|
+| 🫁 Pancreas Dice | **0.732** | +4.6% ↑ |
+| 🔴 Tumor Dice | **0.422** | +11.1% ↑ |
+| 📊 Mean Dice | **0.577** | +6.9% ↑ |
+
+</div>
+
+The model is based on the **Swin-UNETR** architecture and was trained using **MONAI** with:
+
+- ⚡ Advanced preprocessing & augmentation (10× MONAI transforms)
+- 🎯 Deep supervision (5-scale heads)
+- 🔄 Test-Time Augmentation — **8-flip TTA** for +0.02–0.04 Dice gain
+- ⚖️ Class-weighted DiceCE loss `[0.1, 1.0, 4.0]` to handle extreme tumor voxel imbalance (~0.2%)
 
 ---
 
